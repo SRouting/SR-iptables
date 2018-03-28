@@ -16,7 +16,9 @@
 #define IP6T_SRH_LAST_GT        0x0100
 #define IP6T_SRH_LAST_LT        0x0200
 #define IP6T_SRH_TAG            0x0400
-#define IP6T_SRH_MASK           0x07FF
+#define IP6T_SRH_PSID           0x0800
+#define IP6T_SRH_NSID           0x1000
+#define IP6T_SRH_MASK           0x1FFF
 
 /* Values for "mt_invflags" field in struct ip6t_srh */
 #define IP6T_SRH_INV_NEXTHDR    0x0001
@@ -30,7 +32,9 @@
 #define IP6T_SRH_INV_LAST_GT    0x0100
 #define IP6T_SRH_INV_LAST_LT    0x0200
 #define IP6T_SRH_INV_TAG        0x0400
-#define IP6T_SRH_INV_MASK       0x07FF
+#define IP6T_SRH_INV_PSID       0x0800
+#define IP6T_SRH_INV_NSID       0x1000
+#define IP6T_SRH_INV_MASK       0x1FFF
 
 /**
  *      struct ip6t_srh - SRH match options
@@ -39,6 +43,10 @@
  *      @ segs_left: Segments left field of SRH
  *      @ last_entry: Last entry field of SRH
  *      @ tag: Tag field of SRH
+ *      @ psid: SRH previous SID
+ *      @ pmsk: SRH previous SID mask
+ *      @ nsid: SRH next SID
+ *      @ nmsk: SRH next SID mask
  *      @ mt_flags: match options
  *      @ mt_invflags: Invert the sense of match options
  */
@@ -49,6 +57,10 @@ struct ip6t_srh {
 	__u8                    segs_left;
 	__u8                    last_entry;
 	__u16                   tag;
+	struct in6_addr		psid;
+	struct in6_addr         pmsk;
+	struct in6_addr         nsid;
+	struct in6_addr         nmsk;
 	__u16                   mt_flags;
 	__u16                   mt_invflags;
 };

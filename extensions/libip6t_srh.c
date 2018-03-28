@@ -22,6 +22,8 @@ enum {
 	O_SRH_LAST_GT,
 	O_SRH_LAST_LT,
 	O_SRH_TAG,
+	O_SRH_PSID,
+	O_SRH_NSID,
 };
 
 static void srh_help(void)
@@ -38,7 +40,9 @@ static void srh_help(void)
 "[!] --srh-last-entry-eq 	last_entry      Last Entry value of SRH\n"
 "[!] --srh-last-entry-gt 	last_entry      Last Entry value of SRH\n"
 "[!] --srh-last-entry-lt 	last_entry      Last Entry value of SRH\n"
-"[!] --srh-tag			tag             Tag value of SRH\n");
+"[!] --srh-tag			tag             Tag value of SRH\n"
+"[!] --srh-psid			addr[/mask]	SRH previous SID\n"
+"[!] --srh-nsid			addr[/mask]	SRH next SID\n");
 }
 
 #define s struct ip6t_srh
@@ -65,6 +69,10 @@ static const struct xt_option_entry srh_opts[] = {
 	.flags = XTOPT_INVERT | XTOPT_PUT, XTOPT_POINTER(s, last_entry)},
 	{ .name = "srh-tag", .id = O_SRH_TAG, .type = XTTYPE_UINT16,
 	.flags = XTOPT_INVERT | XTOPT_PUT, XTOPT_POINTER(s, tag)},
+	{ .name = "srh-psid", .id = O_SRH_PSID, .type = XTTYPE_HOSTMASK,
+	.flags = XTOPT_INVERT},
+	{ .name = "srh-nsid", .id = O_SRH_NSID, .type = XTTYPE_HOSTMASK,
+	.flags = XTOPT_INVERT},
 	{ }
 };
 #undef s
@@ -138,6 +146,19 @@ static void srh_parse(struct xt_option_call *cb)
 		if (cb->invert)
 			srhinfo->mt_invflags |= IP6T_SRH_INV_TAG;
 		break;
+	case O_SRH_PSID:
+		srhinfo->mt_flags |= IP6T_SRH_PSID;
+		srhinfo->psid = cb->val.haddr.in6;
+		srhinfo->pmsk = cb->val.hmask.in6;
+		if (cb->invert)
+			srhinfo->mt_invflags |= IP6T_SRH_INV_PSID;
+		break;
+	case O_SRH_NSID:
+		srhinfo->mt_flags |= IP6T_SRH_NSID;
+		srhinfo->nsid = cb->val.haddr.in6;
+		srhinfo->nmsk = cb->val.hmask.in6;
+		if (cb->invert)
+			srhinfo->mt_invflags |= IP6T_SRH_INV_NSID;
 	}
 }
 
@@ -180,6 +201,14 @@ static void srh_print(const void *ip, const struct xt_entry_match *match,
 	if (srhinfo->mt_flags & IP6T_SRH_TAG)
 		printf(" tag:%s%d", srhinfo->mt_invflags & IP6T_SRH_INV_TAG ? "!" : "",
 			srhinfo->tag);
+	if (srhinfo->mt_flags & IP6T_SRH_PSID)
+		printf(" psid %s %s/%u", srhinfo->mt_invflags & IP6T_SRH_INV_PSID ? "!" : "",
+			xtables_ip6addr_to_numeric(&srhinfo->psid),
+			xtables_ip6mask_to_cidr(&srhinfo->pmsk));
+	if (srhinfo->mt_flags & IP6T_SRH_NSID)
+		printf(" nsid %s %s/%u", srhinfo->mt_invflags & IP6T_SRH_INV_NSID ? "!" : "",
+			xtables_ip6addr_to_numeric(&srhinfo->nsid),
+			xtables_ip6mask_to_cidr(&srhinfo->nmsk));
 }
 
 static void srh_save(const void *ip, const struct xt_entry_match *match)
@@ -219,6 +248,14 @@ static void srh_save(const void *ip, const struct xt_entry_match *match)
 	if (srhinfo->mt_flags & IP6T_SRH_TAG)
 		printf("%s --srh-tag %u", (srhinfo->mt_invflags & IP6T_SRH_INV_TAG) ? " !" : "",
 			srhinfo->tag);
+	if (srhinfo->mt_flags & IP6T_SRH_PSID)
+		printf("%s --srh-psid %s/%u", srhinfo->mt_invflags & IP6T_SRH_INV_PSID ? " !" : "",
+			xtables_ip6addr_to_numeric(&srhinfo->psid),
+			xtables_ip6mask_to_cidr(&srhinfo->pmsk));
+	if (srhinfo->mt_flags & IP6T_SRH_NSID)
+		printf("%s --srh-nsid %s/%u", srhinfo->mt_invflags & IP6T_SRH_INV_NSID ? " !" : "",
+			xtables_ip6addr_to_numeric(&srhinfo->nsid),
+			xtables_ip6mask_to_cidr(&srhinfo->nmsk));
 }
 
 static struct xtables_match srh_mt6_reg = {
